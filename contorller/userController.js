@@ -5,7 +5,7 @@ require("dotenv").config()
 
 
 // to render signup page
-const register = async (req,res)=>{
+const register = (req,res)=>{
     const message = req.query.message
     res.status(200).render('user/signup',{msg:message})
 }
@@ -34,13 +34,11 @@ const registered = async (req,res)=>{
             subject: 'Your OTP',
             text: `Your OTP is ${otp}`,
           };
-          console.log("otp2");
           await transporter.sendMail(mailOptions);
 
           req.session.email = req.body.email
           req.session.otp = otp;
           req.session.signupData = req.body;
-          console.log("otp");
           res.redirect('/verifyOTP');
         
     } catch (error) {
@@ -51,7 +49,7 @@ const registered = async (req,res)=>{
 }
 
 // to render otp page
-const otp = async (req,res)=>{
+const otp = (req,res)=>{
 
     const message = req.query.message
     res.status(200).render('user/otp',{msg:message})
@@ -117,7 +115,7 @@ const registerUser = async (req,res)=>{
 
 
 // to render login page
-const loadLogin = async (req,res)=>{
+const loadLogin = (req,res)=>{
     const message = req.query.message
     res.render("user/login",{msg:message})
 }
@@ -132,6 +130,8 @@ const login = async (req,res)=>{
 
         if(!user) return res.redirect('/login?message=User not exist')
 
+        if(user.isBlocked) return res.redirect('/login?message=The user is blocked')
+
         const isMatch = await bcrypt.compare(password,user.password)
 
         if(!isMatch) return res.redirect('/login?message=Wrong password')
@@ -144,11 +144,16 @@ const login = async (req,res)=>{
     }
 }
 
-// home
-const home = async (req,res)=>{
-    res.send("you reach")
-}
+// rendr home
+const home = (req,res)=>{
 
+    if(req.session.user){
+        res.render('user/index',{user:true})
+    }else{
+        res.render('user/index',{user:null})
+    }
+
+}
 
 module.exports = {
     loadLogin,

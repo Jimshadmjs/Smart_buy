@@ -7,14 +7,14 @@ const userController = require("../contorller/userController")
 
 
 router.get('/',userController.home)
-router.get('/register',userController.register)
+router.get('/register',user.isLogin,userController.register)
 router.post('/register',userController.registered)
 
-router.get('/verifyOTP',userController.otp)
-router.get('/reSend',userController.reSend)
+router.get('/verifyOTP',user.isLogin,userController.otp)
+router.get('/reSend',user.isLogin,userController.reSend)
 router.post('/verifyOTP',userController.registerUser)
 
-router.get('/login',user.isLogin,userController.loadLogin);
+router.get('/login',user.isLogin,user.isLogin,userController.loadLogin);
 router.post('/login',userController.login)
 
 module.exports = router;

@@ -9,5 +9,8 @@ router.post('/login',adminController.loggedIn)
 
 router.get('/dashboard',admin.checkSession,adminController.dashboard)
 
+router.get('/users',admin.checkSession,adminController.users)
+router.patch('/users/:id',adminController.isBlock)
+
 
 module.exports = router;

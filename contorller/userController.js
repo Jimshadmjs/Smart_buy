@@ -1,11 +1,13 @@
 const userSchema = require("../models/userModel")
 const nodemailer = require('nodemailer')
 const bcrypt = require('bcrypt')
+const productSchema = require('../models/productModel')
+const categorySchema = require('../models/category')
 require("dotenv").config()
 
 
 // to render signup page
-const register = async (req,res)=>{
+const register = (req,res)=>{
     const message = req.query.message
     res.status(200).render('user/signup',{msg:message})
 }
@@ -32,15 +34,14 @@ const registered = async (req,res)=>{
             from: process.env.EMAIL,
             to: req.body.email,
             subject: 'Your OTP',
-            text: `Your OTP is ${otp}`,
+            text: `Your OTP is ${otp} it will expire in a minute`,
           };
-          console.log("otp2");
           await transporter.sendMail(mailOptions);
 
           req.session.email = req.body.email
           req.session.otp = otp;
           req.session.signupData = req.body;
-          console.log("otp");
+          req.session.otpExpires = Date.now() + 1 * 60 * 1000
           res.redirect('/verifyOTP');
         
     } catch (error) {
@@ -51,7 +52,7 @@ const registered = async (req,res)=>{
 }
 
 // to render otp page
-const otp = async (req,res)=>{
+const otp = (req,res)=>{
 
     const message = req.query.message
     res.status(200).render('user/otp',{msg:message})
@@ -117,7 +118,7 @@ const registerUser = async (req,res)=>{
 
 
 // to render login page
-const loadLogin = async (req,res)=>{
+const loadLogin = (req,res)=>{
     const message = req.query.message
     res.render("user/login",{msg:message})
 }
@@ -132,6 +133,8 @@ const login = async (req,res)=>{
 
         if(!user) return res.redirect('/login?message=User not exist')
 
+        if(user.isBlocked) return res.redirect('/login?message=The user is blocked')
+
         const isMatch = await bcrypt.compare(password,user.password)
 
         if(!isMatch) return res.redirect('/login?message=Wrong password')
@@ -144,11 +147,90 @@ const login = async (req,res)=>{
     }
 }
 
-// home
-const home = async (req,res)=>{
-    res.send("you reach")
+// render home
+const home = async(req,res)=>{
+
+    const excludedCategories = await categorySchema.find({ isListed: true }).select('_id')
+
+    const products = await productSchema.find({isListed:true,categoryID: { $nin: excludedCategories.map(cat => cat._id) }}).limit(12).populate({path: 'categoryID',select: 'name'});
+    
+    const formattedProducts = products.map(product => ({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        images: product.images,
+        stock: product.stock,
+        colors: product.colors,
+        category: product.categoryID ? product.categoryID.name : 'Unknown' 
+    }));
+    
+    const  categories = await  categorySchema.find()
+
+    if(req.session.user){
+        res.render('user/home',{user:true,categories,products:formattedProducts,
+
+        })
+    }else{
+        res.render('user/home',{user:null,categories,products:formattedProducts,
+
+        })
+    }
+
+
 }
 
+
+// product detail page
+const product_details = async (req,res)=>{
+
+    try {
+        
+    
+    const id = req.params.id
+    const product = await productSchema.findById(id)
+    
+    if (!product) {
+        return res.status(404).send('Product not found');
+      }
+
+    const relatedProducts = await productSchema.find({
+        categoryID: product.categoryID, 
+        _id: { $ne: product._id },
+        isListed:true
+      }).limit(8); 
+
+
+      if(req.session.user){
+
+         res.render('user/product_detail',{user:true,product,relatedProducts})
+
+      }else{
+
+         res.render('user/product_detail',{user:false,product,relatedProducts})
+
+      }
+      
+
+    }catch (error) {
+        console.error(error);
+        res.status(500).send('Server error');
+      }
+}
+
+
+//logout
+const logout = (req,res)=>{
+    try {
+        
+        delete req.session.user
+        res.redirect('/')
+
+    } catch (error) {
+      res.status(500).send("Server error");
+        
+    }
+}
 
 module.exports = {
     loadLogin,
@@ -158,5 +240,7 @@ module.exports = {
     reSend,
     registerUser,
     login,
-    home
+    home,
+    product_details,
+    logout
 }

@@ -9,10 +9,9 @@ let timeLeft = 60;
 // Focus on the next input field when one is filled
 otpInputs.forEach((input, index) => {
     input.addEventListener('input', () => {
-        // Allow only numeric input
         if (!/^[0-9]*$/.test(input.value)) {
-            input.value = ''; // Clear invalid input
-            return; // Stop further execution
+            input.value = ''; 
+            return; 
         }
 
         // Move to the next input field if filled
@@ -22,7 +21,6 @@ otpInputs.forEach((input, index) => {
     });
 
     input.addEventListener('keydown', (event) => {
-        // Allow backspace to navigate to previous input
         if (event.key === 'Backspace' && index > 0 && input.value.length === 0) {
             otpInputs[index - 1].focus();
         }
@@ -34,7 +32,7 @@ let timerInterval = setInterval(() => {
     if (timeLeft <= 0) {
         clearInterval(timerInterval);
         timerElement.innerText = "0s";
-        resendLink.style.display = "block"; // Show the resend link
+        resendLink.style.display = "block"; 
     } else {
         timerElement.innerText = `${timeLeft--}s`;
     }
@@ -47,10 +45,10 @@ function validateForm() {
         if (input.value === '') {
             msg.innerHTML = 'Please fill in all fields.';
             setTimeout(() => {
-                msg.innerHTML = ''; // Clear message after 3 seconds
+                msg.innerHTML = ''; 
             }, 3000);
-            return false; // Prevent form submission
+            return false; 
         }
     }
-    return true; // Allow form submission
+    return true; 
 }

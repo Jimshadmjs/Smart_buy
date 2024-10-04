@@ -4,10 +4,11 @@ const productSchema = new mongoose.Schema({
   name: String,
   price: Number,
   description: String,
-  images: [String], // Array to store multiple image URLs
-  category: String,
+  images: [String], 
+  categoryID: { type: mongoose.Schema.Types.ObjectId, required: true, ref:'Category'},
   stock: Number,
-  isDeleted: { type: Boolean, default: false }, // For soft deleting products
+  colors: [String],
+  isListed: { type: Boolean, default: true }, 
 },{timestamps:true});
 
 module.exports = mongoose.model('Product', productSchema);
